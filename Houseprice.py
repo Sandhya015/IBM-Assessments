@@ -1,74 +1,86 @@
 import pandas as pd
-import numpy as np
+import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_absolute_error, mean_squared_error
+from sklearn.metrics import mean_absolute_error, r2_score
 
-# House pricing dataset (replace with a larger dataset for higher efficiency)
-data = {
-    'size': [1500, 2000, 2500, 1800, 2200, 3000, 3500, 4000, 2700, 3200],
-    'num_bedrooms': [3, 4, 4, 3, 4, 5, 5, 6, 4, 5],
-    'num_bathrooms': [2, 3, 3, 2, 3, 4, 4, 5, 3, 4],
-    'age': [10, 15, 8, 12, 5, 2, 1, 3, 9, 6],
-    'price': [300000, 450000, 500000, 380000, 450000, 700000, 850000, 950000, 550000, 750000]
-}
+# Load the dataset using space as a delimiter
+data = pd.read_csv('housing.csv', sep='\s+', header=None)
 
-df = pd.DataFrame(data)
+# Define column names
+column_names = [
+    'CRIM', 'ZN', 'INDUS', 'CHAS', 'NOX', 'RM', 'AGE', 
+    'DIS', 'RAD', 'TAX', 'PTRATIO', 'B', 'LSTAT', 'price'
+]
+data.columns = column_names
 
-# Split the data into features (X) and target (y)
-X = df[['size', 'num_bedrooms', 'num_bathrooms', 'age']]
-y = df['price']
+# Prepare the features and target variable
+X = data.drop('price', axis=1)
+y = data['price']
 
-# Split the data into training and testing sets
+# Split the data into training and test sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 # 1. Linear Regression
-model_lr = LinearRegression()
-model_lr.fit(X_train, y_train)
-y_pred_lr = model_lr.predict(X_test)
+linear_model = LinearRegression()
+linear_model.fit(X_train, y_train)
+y_pred_linear = linear_model.predict(X_test)
+mae_linear = mean_absolute_error(y_test, y_pred_linear)
+r2_linear = r2_score(y_test, y_pred_linear)
 
-mae_lr = mean_absolute_error(y_test, y_pred_lr)
-rmse_lr = np.sqrt(mean_squared_error(y_test, y_pred_lr))
+print(f"Linear Regression:\n  Mean Absolute Error: {mae_linear:.2f}\n  R² Score: {r2_linear:.2f}\n")
 
 # 2. Decision Tree Regression
-model_dt = DecisionTreeRegressor(random_state=42)
-model_dt.fit(X_train, y_train)
-y_pred_dt = model_dt.predict(X_test)
+tree_model = DecisionTreeRegressor()
+tree_model.fit(X_train, y_train)
+y_pred_tree = tree_model.predict(X_test)
+mae_tree = mean_absolute_error(y_test, y_pred_tree)
+r2_tree = r2_score(y_test, y_pred_tree)
 
-mae_dt = mean_absolute_error(y_test, y_pred_dt)
-rmse_dt = np.sqrt(mean_squared_error(y_test, y_pred_dt))
+print(f"Decision Tree Regression:\n  Mean Absolute Error: {mae_tree:.2f}\n  R² Score: {r2_tree:.2f}\n")
 
 # 3. Random Forest Regression
-model_rf = RandomForestRegressor(n_estimators=100, random_state=42)
-model_rf.fit(X_train, y_train)
-y_pred_rf = model_rf.predict(X_test)
+forest_model = RandomForestRegressor()
+forest_model.fit(X_train, y_train)
+y_pred_forest = forest_model.predict(X_test)
+mae_forest = mean_absolute_error(y_test, y_pred_forest)
+r2_forest = r2_score(y_test, y_pred_forest)
 
-mae_rf = mean_absolute_error(y_test, y_pred_rf)
-rmse_rf = np.sqrt(mean_squared_error(y_test, y_pred_rf))
+print(f"Random Forest Regression:\n  Mean Absolute Error: {mae_forest:.2f}\n  R² Score: {r2_forest:.2f}\n")
 
-# Display results
-print(f"Linear Regression - MAE: {mae_lr}, RMSE: {rmse_lr}")
-print(f"Decision Tree - MAE: {mae_dt}, RMSE: {rmse_dt}")
-print(f"Random Forest - MAE: {mae_rf}, RMSE: {rmse_rf}")
+# Store results in a DataFrame for better visualization
+results = {
+    'Linear Regression': {'MAE': mae_linear, 'R²': r2_linear},
+    'Decision Tree Regression': {'MAE': mae_tree, 'R²': r2_tree},
+    'Random Forest Regression': {'MAE': mae_forest, 'R²': r2_forest}
+}
 
-# Plot efficiency comparison
-models = ['Linear Regression', 'Decision Tree', 'Random Forest']
-maes = [mae_lr, mae_dt, mae_rf]
-rmses = [rmse_lr, rmse_dt, rmse_rf]
+results_df = pd.DataFrame(results).T
 
-# Plot MAE
-plt.bar(models, maes, color=['blue', 'green', 'red'])
-plt.xlabel('Models')
-plt.ylabel('Mean Absolute Error (MAE)')
-plt.title('Model Comparison (MAE)')
+# Determine the most efficient algorithm based on MAE and R²
+best_mae_algorithm = results_df['MAE'].idxmin()
+best_r2_algorithm = results_df['R²'].idxmax()
+
+# Print the most efficient algorithm based on both metrics
+print(f"The algorithm with the lowest MAE is: {best_mae_algorithm} with MAE: {results[best_mae_algorithm]['MAE']:.2f}")
+print(f"The algorithm with the highest R² score is: {best_r2_algorithm} with R²: {results[best_r2_algorithm]['R²']:.2f}")
+
+# Plot the results
+plt.figure(figsize=(10, 6))
+sns.barplot(x=results_df.index, y='MAE', data=results_df)
+plt.title('Mean Absolute Error of Different Algorithms')
+plt.xlabel('Algorithms')
+plt.ylabel('Mean Absolute Error')
+plt.xticks(rotation=45)
 plt.show()
 
-# Plot RMSE
-plt.bar(models, rmses, color=['blue', 'green', 'red'])
-plt.xlabel('Models')
-plt.ylabel('Root Mean Squared Error (RMSE)')
-plt.title('Model Comparison (RMSE)')
+plt.figure(figsize=(10, 6))
+sns.barplot(x=results_df.index, y='R²', data=results_df)
+plt.title('R² Score of Different Algorithms')
+plt.xlabel('Algorithms')
+plt.ylabel('R² Score')
+plt.xticks(rotation=45)
 plt.show()
