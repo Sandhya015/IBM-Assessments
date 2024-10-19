@@ -10,6 +10,8 @@ from sklearn.metrics import mean_absolute_error, r2_score
 # Load the dataset using space as a delimiter
 data = pd.read_csv('housing.csv', sep='\s+', header=None)
 
+#EDA
+
 # Define column names
 column_names = [
     'CRIM', 'ZN', 'INDUS', 'CHAS', 'NOX', 'RM', 'AGE', 
